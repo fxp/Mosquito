@@ -1,0 +1,37 @@
+<div class="position-r">
+    <div class="ic-selected">
+        <img src="./img/webwxgetmsgimg .png" class="home-theme-img spacer-width">
+    </div>
+
+    <p class="home-num-text ta-c">当前累计有<span class="home-num-count" ng-bind="numberOfPeople"></span>人上传叮咬部位图片</p>
+</div>
+<table class="home-table ta-c spacer-width bc-white fs16">
+    <tr>
+        <th ng-click="goToArticleList('防蚊灭蚊')"><img src="./img/fw.png"></th>
+        <th ng-click="goToArticleList('叮后处理')"><img src="./img/cl.png"></th>
+        <th ng-click="goToArticleList('蚊传疾病')"><img src="./img/jb.png"></th>
+        <th ng-click="goToArticleList('蚊虫那些事')"><img src="./img/wc.png"></th>
+    </tr>
+    <tr>
+        <td ng-click="goToArticleList('防蚊灭蚊')">防蚊灭蚊</td>
+        <td ng-click="goToArticleList('叮后处理')">叮后处理</td>
+        <td ng-click="goToArticleList('蚊传疾病')">蚊传疾病</td>
+        <td ng-click="goToArticleList('蚊虫那些事')">蚊虫那些事</td>
+    </tr>
+</table>
+<div class="userCenter-bc home-blank"></div>
+<div class="bc-white">
+    <p class="home-photo-top-text ta-c">蚊叮查一查，防病早知道</p>
+
+    <div class="home-photo-fl">
+        <img src="./img/pz.png" ng-click="takePhoto()" class="home-photo-img">
+
+        <p class="fs16 home-photo-text">叮咬部位</p>
+    </div>
+    <div class="home-photo-fl fr">
+        <img src="./img/pg.png" ng-click="goToRiskAssessment()" class="home-photo-img">
+
+        <p class="fs16 home-photo-text">风险评估</p>
+    </div>
+</div>
+

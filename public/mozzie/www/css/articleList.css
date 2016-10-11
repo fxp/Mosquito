@@ -1,0 +1,19 @@
+.articleList-back-button-r {
+    right: initial !important;
+}
+
+.articleList-back-button-l {
+    left: 12px;
+}
+
+.articleList-list-time {
+    float: right;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 11px;
+    color: #999999;
+}
+
+.articleList-list-item-p12 {
+    padding: 12px;
+}

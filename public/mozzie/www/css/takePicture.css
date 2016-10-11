@@ -1,0 +1,43 @@
+.takePicture-header-text i {
+    font-size: 16px !important;
+    color: white;
+}
+
+.top20 {
+    margin-top: 8px;
+}
+
+.takePicture-header-div {
+    height: 20px;
+    width: 100%;
+    z-index: 100;
+}
+
+.h0 {
+    height: 0!important;
+}
+
+.takePicture-header {
+    position: fixed;
+    z-index: 101;
+    width: 100%
+}
+
+.takePicture-bc {
+    background: #e7e7e7
+}
+
+.takePicture-font-padding {
+    padding: 10px !important;
+}
+
+.takePicture-img-div {
+    width: 100%;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+}
+
+.takePicture-img-show {
+    width: 100%;
+}

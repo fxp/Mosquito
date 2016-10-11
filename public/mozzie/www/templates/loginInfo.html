@@ -1,0 +1,24 @@
+<form class="list ">
+    <div class="spacer spacer-width h30"></div>
+
+    <div class="item item-input item-stacked-label login-item-p">
+        <input type="tel" class="fs16" placeholder="手机号码" ng-model="phoneNumber">
+    </div>
+
+    <div class="spacer spacer-width h30"></div>
+    <div>
+        <div class="item item-input item-stacked-label login-input-fl login-item-p">
+            <input type="tel" class="fs16" ng-model="verifyNum" placeholder="请输入获取到的验证码">
+        </div>
+        <button ng-click="postSms(phoneNumber);" class="login-input-fr userCenter-bc ta-c"
+                ng-disabled="showTime"
+                ng-bind="verificationButtonText"></button>
+    </div>
+    <a ng-click="verify(verifyNum,phoneNumber)" ng-disabled="!verifyNum || !phoneNumber"
+       class="login-verification-button white button button-block ">验证身份</a>
+</form>
+<div class="login-text">
+    <p>登录后可保留蚊叮症状跟踪等</p>
+
+    <p>注册代表你已阅读并同意<a>用户协议</a></p>
+</div>

@@ -1,0 +1,186 @@
+/* Empty. Add your own CSS if you like */
+.bar-calm-mozzie-header {
+    border-color: #f7f7f7;
+    background-color: #f7f7f7;
+    background-image: linear-gradient(0deg, #f2f2f2, #f2f2f2 50%, transparent 50%);
+    color: #333;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+    word-wrap: break-word;
+}
+
+.blue-header {
+    border-color: #71B6DD;
+    background-color: #71B6DD;
+    color: white
+}
+
+.white {
+    color: white;
+}
+
+.fl {
+    float: left;
+}
+
+.fr {
+    float: right;
+}
+
+.spacer-width {
+    width: 100%;
+}
+
+.ta-c {
+    text-align: center;
+}
+
+.bc-white {
+    background-color: white !important;
+}
+
+.padding0 {
+    padding: 0;
+}
+
+.position-r {
+    position: relative;
+}
+
+.visible {
+    overflow: visible;
+}
+
+.fs16 {
+    font-size: 16px !important;
+}
+
+.fs20 {
+    font-size: 20px !important;
+}
+
+.fs14 {
+    font-size: 14px !important;
+}
+
+.mr25 {
+    margin-right: 25px
+}
+
+.result-fs {
+    color: #888;
+}
+
+.result-lh {
+    line-height: 30px;
+}
+
+.fs-color {
+    color: #333;
+}
+
+.pl42 {
+    padding-left: 42px
+}
+
+.pb28 {
+    padding-bottom: 28px
+}
+
+.mt10 {
+    margin-top: 10px;
+}
+
+.h18 {
+    height: 18px;
+}
+
+.h105 {
+    height: 105px;
+}
+
+.h30 {
+    height: 30px;
+}
+
+.overflow-auto {
+    overflow: auto;
+}
+
+.pb15 {
+    padding-bottom: 15px;
+}
+
+.header-border {
+    border-top: 1px solid #bbb
+}
+
+/*near*/
+#mapListInfo {
+    position: absolute;
+    height: 30%;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    color: #888;
+}
+
+.map-li {
+    padding: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.map-list-address {
+    margin-left: 12px;
+}
+
+.assessment-position {
+    font-size: 20px !important;
+    position: absolute;
+    left: 0;
+    right: 60px;
+}
+
+.nearby-position-mr4 {
+    margin-right: 4px;
+}
+
+/*分页*/
+.page-list .pagination {
+    float: left;
+}
+
+.page-list .pagination span {
+    cursor: pointer;
+}
+
+.page-list .pagination .separate span {
+    cursor: default;
+    border-top: none;
+    border-bottom: none;
+}
+
+.page-list .pagination .separate span:hover {
+    background: none;
+}
+
+.page-list .page-total {
+    float: left;
+    margin: 25px 20px;
+}
+
+.page-list .page-total input, .page-list .page-total select {
+    height: 26px;
+    border: 1px solid #ddd;
+}
+
+.page-list .page-total input {
+    width: 40px;
+    float: right;
+    padding-left: 3px;
+}
+
+.page-list .page-total select {
+    width: 50px;
+}

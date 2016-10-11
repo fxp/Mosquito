@@ -1,0 +1,33 @@
+<ion-header-bar class=" bar-calm-mozzie-header" align-title="center">
+    <h1 class="title">评估结果</h1>
+    <button class="articleList-back-button-r button back-button buttons button-icon icon ion-ios-arrow-back header-item"
+            ng-click="$ionicGoBack()"><span class="back-text"></span>
+    </button>
+    <i class="icon ion-android-share-alt assessment-risk-button"></i>
+</ion-header-bar>
+<ion-content padding="false" class="has-header">
+
+    <div class="assessment-p40">
+        <div class=" pb15">
+            <div class="position-r">
+                <canvas id="canvas-preview"></canvas>
+                <p id="preview-textfield"></p>
+            </div>
+
+            <div class="fs16 result-fs ta-c">
+                <div class="mt10">被蚊子叮咬 {{lastBiteAt}} 天<br>评估日期 {{ assessmentAt | date : "yyyy-MM-d" }}
+                </div>
+            </div>
+        </div>
+
+        <div class="pb15">
+            <img src="./img/touxiang.png" class="assessment-img">
+        </div>
+
+        <p class="fs16 result-fs result-lh">根据{{ assessmentAt | date : "yyyy-MM-d H:m:s"
+            }}上传的蚊子叮咬部位图片，结合当前症状和本地区传染病流行风险，尚不能排除感染蚊传疾病的风险。
+            建议到医院就诊，做进一步诊断治疗。</p>
+    </div>
+    <a href="#/nearbyHospital" class="button-block risk-button assessment-button-b"
+       nav-transition="none">查看离你最近的医疗机构</a>
+</ion-content>

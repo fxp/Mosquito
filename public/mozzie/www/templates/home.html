@@ -1,0 +1,57 @@
+<ion-view hide-nav-bar="true">
+
+    <ion-header-bar class="blue-header" align-title="center">
+        <div ng-click="goToCurrentLocation()">
+            <img src="./img/position.png" class="home-position-img">
+
+            <span ng-class="{true:'home-position-ios-test',false:'home-position-android-test'}[isiOS]">{{currentProvince}}</span>
+            <div>{{test}}</div>
+
+        </div>
+        <div ng-click="goToUserCenter()" class="home-modal-user-div">
+            <img src="./img/user.png" class="home-modal-user-img">
+        </div>
+    </ion-header-bar>
+
+    <ion-content padding="false" class="manual-ios-statusbar-padding" overflow-scroll="false">
+        <home-page></home-page>
+    </ion-content>
+    <script id="templates/maybeMozzieModal.html" type="text/ng-template">
+        <ion-modal-view>
+            <ion-content overflow-scroll="false">
+                <ion-header-bar align-title="center" class="home-modal-header userCenter-icon-border">
+                    <button class="buttons button-icon" ng-click="hideModal()">
+                        <i class="icon ion-ios-arrow-left white"></i>
+                    </button>
+                    <h1 class="title white">可能蚊种</h1>
+                </ion-header-bar>
+                <img src="./img/arrow_left.png" ng-click="lastSlide()" class="home-modal-arrow home-modal-arrow-l">
+                <img src="./img/arrow_right.png" ng-click="nextSlide()" class="home-modal-arrow home-modal-arrow-r">
+                <ion-slide-box does-continue="false" show-pager="false" auto-play="false" slide-interval="true"
+                               on-swipe-right="lastSlide()" on-swipe-left="nextSlide()">
+                    <ion-slide ng-repeat="x in mozzieInfo">
+                        <div class="takePicture-img-div">
+                            <img ng-src="{{imgUrl}}" class="takePicture-img-show">
+                            <img ng-src="{{x.img.url}}"
+                                 class="home-carrousel-img-size home-modal-carrousel-mozzie-ing">
+
+                            <div class="home-carrousel-img-text">
+                                <span ng-bind="x.name" class="mr25"></span>可能性: {{x.chance}}%
+                            </div>
+                        </div>
+                        <ion-item class="item ic-selected home-modal-illness">
+                            传染疾病可能性
+                        </ion-item>
+                        <form class="list home-modal-text-p16 spacer-width" ng-repeat="y in x.illness"
+                        >
+                            <!--repeat-end="showModal()">-->
+                            <p class="home-modal-title-name" ng-bind="y.title"></p>
+
+                            <p ng-bind="y.content" class="home-modal-center"></p>
+                        </form>
+                    </ion-slide>
+                </ion-slide-box>
+            </ion-content>
+        </ion-modal-view>
+    </script>
+</ion-view>

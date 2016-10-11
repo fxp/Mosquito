@@ -1,0 +1,42 @@
+<ion-view title="管理" hide-back-button="true">
+    <ion-content padding="true" class="has-header">
+        <ion-item class="item-icon-left item-icon-right item ic-selected"
+                  ng-repeat="i in userInfo" ng-click="goToManageImg(i.objectId)">
+            <i class="icon ion-person"></i>{{i.username}}
+            <span class="fs14" style="color:#A50A0A;">{{i.type}}</span>
+            <i class="icon ion-ios-arrow-forward"></i>
+        </ion-item>
+
+        <div class="list card" ng-repeat="i in imgInfo">
+            <ion-item class="item-icon-right item ic-selected takePicture-font-padding"
+                      style="background: black;color: white">
+                用户：{{i.username}}
+            </ion-item>
+            <div>
+                <p>蚊子包：</p>
+
+                <div style="text-align: center; background-color: rgb(232, 235, 239);">
+                    <img ng-src="{{i.img}}" style="max-width: 100%">
+                </div>
+            </div>
+            <div ng-show="i.mozzieImg != ''">
+                <p>蚊子：</p>
+
+                <div style="text-align: center; background-color: rgb(232, 235, 239);">
+                    <img ng-src="{{i.mozzieImg}}">
+                </div>
+            </div>
+            <div class="item  ic-selected">
+                <div style="margin-top:0;color:#000000;">
+                    <p>拍摄时间：<strong>{{i.createdAt}}</strong></p>
+
+                    <p>拍摄地点：<strong>{{i.imgPosition}}</strong></p>
+                </div>
+            </div>
+            <button class="button button-assertive button-block ic-selected" ng-click="deleteImg(i.objectId)">
+                删除图片
+            </button>
+        </div>
+        <tm-pagination conf="paginationConf"></tm-pagination>
+    </ion-content>
+</ion-view>

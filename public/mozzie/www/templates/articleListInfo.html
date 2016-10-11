@@ -1,0 +1,12 @@
+<ion-header-bar class=" bar-calm-mozzie-header" align-title="center">
+    <h1 class="title" ng-bind="headerText"></h1>
+    <button class="articleList-back-button-l articleList-back-button-r button back-button buttons button-icon icon ion-ios-arrow-back header-item"
+            ng-click="$ionicGoBack()"><span class="back-text"></span>
+    </button>
+</ion-header-bar>
+<ion-content padding="false" class="has-header" overflow-scroll="false" on-drag-right="onDragRight()">
+    <ion-item class="item ic-selected articleList-list-item-p12 fs14" ng-repeat="x in articleInfo" ng-click="goToArticleInfo(x)">
+        {{x.title}}
+        <span class="articleList-list-time" ng-bind="x.createdAt"></span>
+    </ion-item>
+</ion-content>

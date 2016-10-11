@@ -1,0 +1,31 @@
+<ion-view title="图片管理">
+    <ion-content padding="true" class="has-header">
+        <div class="list card" ng-repeat="i in userImgInfo">
+            <div>
+                <p>蚊子包：</p>
+
+                <div style="text-align: center; background-color: rgb(232, 235, 239);">
+                    <img ng-src="{{i.img}}" style="max-width: 100%">
+                </div>
+            </div>
+            <div ng-show="i.mozzieImg != ''">
+                <p>蚊子：</p>
+
+                <div style="text-align: center; background-color: rgb(232, 235, 239);">
+                    <img ng-src="{{i.mozzieImg}}">
+                </div>
+            </div>
+            <div class="item  ic-selected">
+                <div style="margin-top:0;color:#000000;">
+                    <p>拍摄时间：<strong>{{i.createdAt}}</strong></p>
+
+                    <p>拍摄地点：<strong>{{i.imgPosition}}</strong></p>
+                </div>
+            </div>
+            <button class="button button-assertive button-block ic-selected" ng-click="deleteImg(i.objectId)">
+                删除图片
+            </button>
+        </div>
+
+    </ion-content>
+</ion-view>
