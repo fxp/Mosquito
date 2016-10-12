@@ -3,7 +3,9 @@ var AV = require('leanengine');
 var unirest = require("unirest");
 var Promise = require('promise');
 
-var coordtransform=require('coordtransform');
+var coordtransform = require('coordtransform');
+
+var _ = require("underscore");
 
 function getProvince(lat, lon) {
     return new Promise(function (fulfill, reject) {
@@ -811,13 +813,43 @@ function getProvince(lat, lon) {
 //    response.success('保存成功')
 //});10.8.11.31
 
-function diagnose(lat, lon, time,symptoms, family_disease) {
+var SYMPTOM_DISEASE = {
+    "发热": ["登革热", "流行性乙脑", "疟疾", "基孔肯雅热", "寨卡病毒病", "黄热病"],
+    "头痛": ["流行性乙脑", "疟疾", "基孔肯雅热", "寨卡病毒病", "黄热病"],
+    "头痛伴眼眶痛": ["登革热"],
+    "肌肉酸痛": ["登革热", "寨卡病毒病"],
+    "骨关节痛": ["登革热", "基孔肯雅热", "寨卡病毒病"],
+    "皮疹": ["登革热", "基孔肯雅热", "寨卡病毒病"],
+    "出血": ["登革热"],
+    "恶心": ["基孔肯雅热"],
+    "呕吐": ["流行性乙脑", "基孔肯雅热"],
+    "结膜炎": ["寨卡病毒病"],
+    "全身乏力": ["寨卡病毒病"],
+    "寒战": ["黄热病"],
+    "烦躁": ["流行性乙脑"],
+    "意识障碍": ["流行性乙脑"],
+    "惊厥": ["流行性乙脑"],
+    "周期性发冷发热": ["疟疾"],
+    "出汗": ["疟疾"],
+}
+
+var DISEASE_INCUBATION_DAYS = {
+    "登革热": 20,
+    "基孔肯雅热": 15,
+    "寨卡病毒病": 15,
+    "黄热病": 10,
+    "流行性乙脑": 25,
+    "疟疾": 30
+}
+
+function diagnose(lat, lon, time, symptoms, family_disease, lastPicture) {
     return new Promise(function (fulfill, reject) {
         var t = new Date(time);
         if (t == 'Invalid Date') {
             reject('invalid date');
             return;
         }
+        console.log(t);
         getProvince(lat, lon)
             .then(function (province) {
                 var querys = new AV.Query('VaidProvinces');
@@ -826,13 +858,18 @@ function diagnose(lat, lon, time,symptoms, family_disease) {
                     var provinces_item = results[0];
                     if (provinces_item) {
                         var minCount = t.getHours() * 60 + t.getMinutes();
-                        if (minCount > (provinces_item.attributes.start_hour * 60 + provinces_item.attributes.start_min) &&
-                            minCount < (provinces_item.attributes.end_hour * 60 + provinces_item.attributes.end_min)) {
+                        console.log(provinces_item.get('start').start_hour);
+                        // console.log((provinces_item.get('start_hour') * 60 + provinces_item.get('start_min')));
+                        // console.log("minCount:" + minCount);
+                        if (minCount > (provinces_item.get('start').start_hour * 60 + provinces_item.get('start').start_min) &&
+                            minCount < (provinces_item.get('end').end_hour * 60 + provinces_item.get('end').end_min)) {
+                            console.log('DAY diseaseRate:' + provinces_item.attributes.diseaseRate);
                             return Promise.resolve({
                                 mozRiskRate: provinces_item.attributes.dayRiskRate,
                                 diseaseRate: provinces_item.attributes.diseaseRate
                             });
                         } else {
+                            console.log('NIGHT diseaseRate:' + provinces_item.attributes.diseaseRate);
                             return Promise.resolve({
                                 mozRiskRate: provinces_item.attributes.nightRiskRate,
                                 diseaseRate: provinces_item.attributes.diseaseRate
@@ -842,25 +879,48 @@ function diagnose(lat, lon, time,symptoms, family_disease) {
                         reject('invalid location');
                         return;
                     }
-                },function(error){
+                }, function (error) {
                     console.log(error)
+                    reject('invalid location');
                 });
             })
             .then(function (rates) {
-                //console.log(rates)
-                //console.log(rates.mozRiskRate);
-                //console.log(rates.diseaseRate);10.08.11.34
                 var result;
+                var dRate = (rates.diseaseRate * 100000) * 40;
+                dRate = (dRate > 40) ? 40 : dRate;
+                console.log("dRate:" + dRate);
+                console.log("rates.mozRiskRate:" + rates.mozRiskRate);
                 if (typeof family_disease != 'undefined') {
-                    result = 40 - rates.diseaseRate * 40 * 0.8 + rates.mozRiskRate * 35 + 25;
+                    result = 40 - dRate * 0.8 + rates.mozRiskRate * 35 + 25;
                 } else {
-                    result = (rates.diseaseRate * 40 + rates.mozRiskRate * 35 + 25);
+                    result = (dRate + rates.mozRiskRate * 35 + 25);
                     if (symptoms.indexOf("无以上症状") >= 0) {
                         result = result * 0.2;
                     } else {
-                        result = (symptoms && symptoms.length > 0) ? result * 0.5 : result * 0.2;
+                        var diseases = [];
+                        _.each(symptoms, function (s) {
+                            diseases = _.union(SYMPTOM_DISEASE[s], diseases);
+                        })
+                        var max_incubation_days = 0;
+                        _.each(diseases, function (d) {
+                            if (max_incubation_days < DISEASE_INCUBATION_DAYS[d]) {
+                                max_incubation_days = DISEASE_INCUBATION_DAYS[d];
+                            }
+                        })
+
+                        var lastPictureBeforeDays = Math.ceil((new Date() - lastPicture) / 1000 / 60 / 60 / 24);
+                        var inIncubationPeriod = (lastPictureBeforeDays < max_incubation_days);
+
+                        if (inIncubationPeriod) {
+                            console.log("潜伏期," + result);
+                            result = result * 1;
+                        } else {
+                            console.log("非潜伏期," + result);
+                            result = (symptoms && symptoms.length > 0) ? result * 0.5 : result * 0.2;
+                        }
                     }
                 }
+                result = Math.round(result);
                 fulfill(result);
             }, function (err) {
                 reject(err);
@@ -871,7 +931,7 @@ function diagnose(lat, lon, time,symptoms, family_disease) {
     });
 }
 
-function insect_statistic(lat, lon,time) {
+function insect_statistic(lat, lon, time) {
     return new Promise(function (fulfill, reject) {
         var t = new Date(time);
         if (t == 'Invalid Date') {
@@ -882,9 +942,9 @@ function insect_statistic(lat, lon,time) {
                     console.log(province);
                     var querys = new AV.Query('VaidProvinces');
                     querys.find().then(function (results) {
-                        for (var i = 0;i<results.length;i++){
+                        for (var i = 0; i < results.length; i++) {
                             var provinces_item = results[i];
-                            if(province == provinces_item.attributes.provinces_name || (provinces_item.attributes.provinces_name != province && i == (results.length-1)) ){
+                            if (province == provinces_item.attributes.provinces_name || (provinces_item.attributes.provinces_name != province && i == (results.length - 1))) {
                                 var minCount = t.getHours() * 60 + t.getMinutes();
                                 if (minCount > (provinces_item.attributes.start.start_hour * 60 + provinces_item.attributes.start.start_min) &&
                                     minCount < (provinces_item.attributes.end.end_hour * 60 + provinces_item.attributes.end.end_min)) {
@@ -895,7 +955,7 @@ function insect_statistic(lat, lon,time) {
                                 break;
                             }
                         }
-                    },function(error){
+                    }, function (error) {
                         console.log('i')
                         console.log(error)
                     })
@@ -915,24 +975,29 @@ AV.Cloud.define('insect_statistic', function (request, response) {
             var result = [];
             var querys = new AV.Query('Insect');
             querys.find().then(function (results) {
-                for(var j=0;j<results.length;j++){
+                for (var j = 0; j < results.length; j++) {
                     var a = results[j]
-                for (var i in insects) {
-                    //if (INSECTS[i])10.8.11
-                     if (i == a.attributes.name) {
-                        result.push({
-                            name: i,
-                            img: a.attributes.img,
-                            illness: a.attributes.illness,
-                            chance: insects[i]
-                        });
+                    for (var i in insects) {
+                        //if (INSECTS[i])10.8.11
+                        if (i == a.attributes.name) {
+                            result.push({
+                                name: i,
+                                img: a.attributes.img,
+                                illness: a.attributes.illness,
+                                chance: insects[i]
+                            });
+                        }
                     }
                 }
-                }
+
+                // console.log("result");
+                // console.log(_.sortBy(result, 'chance').reverse().slice(0, 3));
+
                 response.success({
-                    insects: result
+                    // insects: result
+                    insects: _.sortBy(result, 'chance').reverse().slice(0, 3)
                 });
-            },function(error){
+            }, function (error) {
                 console.log(error)
             })
         }, function (err) {
@@ -948,7 +1013,7 @@ AV.Cloud.define('is_available', function (request, response) {
             var querys = new AV.Query('VaidProvinces');
             querys.equalTo('provinces_name', result);
             querys.find().then(function (results) {
-                if (results[0] != undefined ) {
+                if (results[0] != undefined) {
                     response.success({
                         valid: true
                     })
@@ -957,7 +1022,7 @@ AV.Cloud.define('is_available', function (request, response) {
                         valid: false
                     })
                 }
-                },function(error){
+            }, function (error) {
                 response.error(error)
             })
 
@@ -969,48 +1034,95 @@ AV.Cloud.define('is_available', function (request, response) {
         })
 });
 
+var SUGGESTION_TEMPLATE = {};
+
+var dateFormat = require('dateformat');
+
+var getSuggestion = function (grade, symptoms, family_disease, last_picture_at) {
+    var t = dateFormat(last_picture_at, "yyyy-MM-d H:m:s");
+    if (symptoms.length == 1 && symptoms[0] == '无以上症状' && family_disease.length == 0) {
+        return "根据" + t + "上传的蚊子叮咬部位图片，结合本地区传染病流行风险，建议继续自我观察，如出现上述症状请再次评估。";
+    } else if (symptoms.length == 1 && symptoms[0] == '无以上症状' && family_disease.length > 0) {
+        return "根据" + t + "上传的蚊子叮咬部位图片，结合本地区传染病流行风险以及共同居住的家人已有" + family_disease[0] + "发病，建议继续自我观察，如出现上述症状请及时到医院就诊。";
+    } else if (grade > 0 && grade <= 25) {
+        return "根据" + t + "上传的蚊子叮咬部位图片，结合当前症状和本地区传染病流行风险，建议继续自我观察，如出现症状加重应及时到医院就诊。"
+    } else if (grade > 25 && grade <= 50) {
+        return "根据" + t + "上传的蚊子叮咬部位图片，结合当前症状和本地区传染病流行风险，尚不能排除感染蚊传疾病的风险。建议到医院就诊，做进一步诊断治疗。"
+    } else if (grade > 50 && grade <= 75) {
+        return "根据" + t + "上传的蚊子叮咬部位图片，结合当前症状和本地区传染病流行风险，尚不能排除感染蚊传疾病的风险。建议及时到医院就诊，做进一步诊断治疗。"
+    } else if (grade > 75 && grade <= 100) {
+        return "根据" + t + "上传的蚊子叮咬部位图片，结合当前症状和本地区传染病流行风险以及共同居住的家人已有XX发病，感染同样传染病的风险程度较高。建议立即到医院就诊，做进一步诊断治疗。"
+    } else {
+        return "根据2016-08-10 10:58:11上传的蚊子叮咬部位图片，结合本地区传染病流行风险，建议继续自我观察，如出现上述症状请再次评估。测试失败";
+    }
+}
+
+
 AV.Cloud.define('get_grade', function (request, response) {
-   // console.log('get_grade', JSON.stringify(request.params));10.8.11
+    // console.log('get_grade', JSON.stringify(request.params));10.8.11
     //diagnose(22.8155, 108.3275, '2016-09-26T14:25:44.388Z',['123'], '123')
-   diagnose(request.params.lat, request.params.lon, request.params.time, request.params.symptoms, request.params.family_disease)
-        .then(function (result) {
-            response.success({
-                risk_rate: result
-            });
-        }, function (err) {
-            response.error(err);
-        })
+    console.log(request.params);
+    // TODO modify this
+    var user_id = request.params.user_id || "57ed237eda2f60004f488d7e";
+    var query = new AV.Query('CameraPosition');
+    query.equalTo('user', AV.Object.createWithoutData('_User', user_id));
+    query.descending('createdAt');
+    query.find().then(function (results) {
+        var lastPictureAt = new Date();
+        if (results.length > 0) {
+            lastPictureAt = results[0].get('createdAt');
+        }
+        var symptoms = request.params.symptoms || [];
+        var family_disease = request.params.family_disease || [];
+
+        console.log('lastPictureAt,' + lastPictureAt);
+        diagnose(request.params.lat, request.params.lon, request.params.time,
+            symptoms, family_disease, lastPictureAt)
+            .then(function (result) {
+                var suggestion = getSuggestion(result, symptoms, family_disease, lastPictureAt);
+                console.log('su' + suggestion);
+                response.success({
+                    risk_rate: result,
+                    last_pictured_at: results[0].get('createdAt'),
+                    suggestion: suggestion
+                });
+            }, function (err) {
+                response.error(err);
+            })
+    }, function (err) {
+        response.error(err);
+    })
 });
 
-function changeCoordinate(lon,lat,original,target ){
+function changeCoordinate(lon, lat, original, target) {
     return new Promise(function (fulfill, reject) {
-        if(original == 'bd09'&& target == 'wgs84'){
+        if (original == 'bd09' && target == 'wgs84') {
             console.log('3')
-            var coord = coordtransform.bd09togcj02(lon,lat);//百度经纬度坐标转国测局坐标
-            var target_coordinate = coordtransform.gcj02towgs84(coord[0],coord[1]);//国测局坐标转wgs84坐标
+            var coord = coordtransform.bd09togcj02(lon, lat);//百度经纬度坐标转国测局坐标
+            var target_coordinate = coordtransform.gcj02towgs84(coord[0], coord[1]);//国测局坐标转wgs84坐标
             console.log(target_coordinate)
         }
-       else if(original == 'wgs84'&& target == 'bd09' ){
+        else if (original == 'wgs84' && target == 'bd09') {
             console.log('4')
-            var coord = coordtransform.wgs84togcj02(lon,lat);//wgs84转国测局坐标
-            var target_coordinate = coordtransform.gcj02tobd09(coord[0],coord[1]);//国测局坐标转百度坐标
+            var coord = coordtransform.wgs84togcj02(lon, lat);//wgs84转国测局坐标
+            var target_coordinate = coordtransform.gcj02tobd09(coord[0], coord[1]);//国测局坐标转百度坐标
         }
-        else{
-            var originaltarget = original+'to'+target
-            var target_coordinate = coordtransform[originaltarget](lon,lat);
+        else {
+            var originaltarget = original + 'to' + target
+            var target_coordinate = coordtransform[originaltarget](lon, lat);
         }
         fulfill(target_coordinate);
     })
 }
 
-AV.Cloud.define('transformation_coordinate',function(request,response) {
+AV.Cloud.define('transformation_coordinate', function (request, response) {
     var lat = 38.00541012868753,
         lon = 114.51368950957637,
         original = 'gcj02',
         target = 'wgs84';
-    changeCoordinate(lon,lat,original,target).then(function(result){
+    changeCoordinate(lon, lat, original, target).then(function (result) {
         response.success(result);
-    },function(error){
+    }, function (error) {
         response.success(error)
     });
 });
