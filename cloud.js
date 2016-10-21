@@ -118,9 +118,6 @@ function diagnose(lat, lon, time, symptoms, family_disease, lastPicture) {
                     var provinces_item = results[0];
                     if (provinces_item) {
                         var minCount = t.getHours() * 60 + t.getMinutes();
-                        // console.log(provinces_item.get('start').start_hour);
-                        // console.log((provinces_item.get('start_hour') * 60 + provinces_item.get('start_min')));
-                        // console.log("minCount:" + minCount);
                         if (minCount > (provinces_item.get('start').start_hour * 60 + provinces_item.get('start').start_min) &&
                             minCount < (provinces_item.get('end').end_hour * 60 + provinces_item.get('end').end_min)) {
                             console.log('DAY diseaseRate:' + provinces_item.get("diseaseRate"));
@@ -182,7 +179,11 @@ function diagnose(lat, lon, time, symptoms, family_disease, lastPicture) {
                     }
                 }
                 result = Math.round(result);
-                fulfill(result);
+                fulfill({
+                    rate: result,
+                    lat: lat,
+                    lon: lon
+                });
             }, function (err) {
                 reject(err);
             })
@@ -223,27 +224,11 @@ function insect_statistic(lat, lon, time) {
     })
 }
 
-function getIllness(insect) {
-    if (INSECT_DISEASE[insect]) {
-        var result = [];
-        var insectDiseases = INSECT_DISEASE[insect];
-        _.each(insectDiseases, function (disease) {
-            result.push({
-                title: disease,
-                content: DISEASE[disease].content
-            })
-        })
-        return result;
-    } else {
-        return undefined;
-    }
-}
-
 AV.Cloud.define('insect_statistic', function (request, response) {
     var lat = request.params.lat,
         lon = request.params.lon,
         time = request.params.time;
-    console.log('insect_statistic', JSON.stringify(request.params));
+    console.log('insect_statistic,' + JSON.stringify(request.params));
     insect_statistic(lat, lon, time)
         .then(function (insects) {
             var result = [];
@@ -307,16 +292,9 @@ function getOptionsResult(take_picture, diagnose, in_service) {
         }
     }
 }
-//
-// getLastPicture("57be6467165abd00663fe33b")
-//     .then(function (last_picture) {
-//         console.log(_.isObject(last_picture));
-//     })
-//
-// console.log()
 
 AV.Cloud.define('options', function (request, response) {
-    console.log(request.params);
+    console.log('options,' + JSON.stringify(request.params));
     var lat = request.params.lat,
         lon = request.params.lon,
         user_id = request.params.user_id;
@@ -344,7 +322,7 @@ AV.Cloud.define('options', function (request, response) {
 })
 
 AV.Cloud.define('is_available', function (request, response) {
-    //console.log('is_available,' + JSON.stringify(request.params));10.8.11
+    console.log('is_available,' + JSON.stringify(request.params));
     getProvince(request.params.lat, request.params.lon)
         .then(function (result) {
             var querys = new AV.Query('VaidProvinces');
@@ -392,49 +370,58 @@ var getSuggestion = function (grade, symptoms, family_disease, last_picture_at) 
     }
 }
 
-AV.Cloud.define('get_grade', function (request, response) {
-    // console.log('get_grade', JSON.stringify(request.params));10.8.11
-    //diagnose(22.8155, 108.3275, '2016-09-26T14:25:44.388Z',['123'], '123')
-    console.log(request.params);
-    // TODO modify this
-    var user_id = request.params.user_id || "57ed237eda2f60004f488d7e";
+
+function getLastPicture(user_id) {
     var query = new AV.Query('CameraPosition');
     query.equalTo('user', AV.Object.createWithoutData('_User', user_id));
     query.descending('createdAt');
-    query.find().then(function (results) {
-        var lastPictureAt = new Date();
-        if (results.length > 0) {
-            lastPictureAt = results[0].get('createdAt');
-        } else {
-            response.error("non picture found");
-            return;
-        }
-        var symptoms = request.params.symptoms || [];
-        var family_disease = request.params.family_disease || [];
+    return query.first();
+}
 
-        // diagnose(request.params.lat, request.params.lon, request.params.time,
-        // console.log(results[0].createdAt);
-        diagnose(
-            results[0].get('imgCoordinate').latitude,
-            results[0].get('imgCoordinate').longitude,
-            results[0].createdAt.toISOString(),
-            symptoms, family_disease, lastPictureAt)
-            .then(function (result) {
-                var suggestion = getSuggestion(result, symptoms, family_disease, lastPictureAt);
-                var result = {
-                    risk_rate: result,
-                    last_pictured_at: results[0].get('createdAt'),
-                    suggestion: suggestion,
-                    user_id: user_id
-                };
-                console.log(result);
-                response.success(result);
-            }, function (err) {
-                response.error(err);
-            })
-    }, function (err) {
-        response.error(err);
-    })
+var Scoring = AV.Object.extend('Scoring');
+AV.Cloud.define('get_grade', function (request, response) {
+    console.log('get_grade,' + JSON.stringify(request.params));
+    var user_id = request.params.user_id;
+    var symptoms = request.params.symptoms || [];
+    var family_disease = request.params.family_disease || [];
+    var lastpicture;
+    if (!_.isString(user_id) || user_id.length == 0) {
+        response.error("invalid user_id");
+        return;
+    }
+    getLastPicture(user_id)
+        .then(function (lp) {
+            lastpicture = lp;
+            if (!_.isObject(lp)) {
+                throw new Error("invalid user_id");
+            }
+            return diagnose(
+                lastpicture.get('imgCoordinate').latitude,
+                lastpicture.get('imgCoordinate').longitude,
+                lastpicture.createdAt.toISOString(),
+                symptoms,
+                family_disease,
+                lastpicture.createdAt);
+        })
+        .then(function (result) {
+            var rate = result.rate;
+            var suggestion = getSuggestion(rate, symptoms, family_disease, lastpicture.createdAt);
+            var result = {
+                risk_rate: rate,
+                lastpicture: lastpicture,
+                lastpicture_when: lastpicture.createdAt,
+                suggestion: suggestion,
+                user: AV.Object.createWithoutData('_User', user_id),
+                lastpicture_location: new AV.GeoPoint(lastpicture.get('imgCoordinate').latitude, lastpicture.get('imgCoordinate').longitude)
+            };
+            return new Scoring(result).save();
+        })
+        .then(function (scoring) {
+            console.log(scoring);
+            response.success(scoring);
+        }, function (err) {
+            response.error(err);
+        })
 });
 
 function changeCoordinate(lon, lat, original, target) {
